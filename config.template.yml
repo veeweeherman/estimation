@@ -1,0 +1,8 @@
+# This is a template for the config
+# copy this file into config.file in the home directory
+# and fill in your credentials there
+# the actual config file will be ignored by git
+
+github:
+  username: "harry"
+  password: "potter"
