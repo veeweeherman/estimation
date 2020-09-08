@@ -22,6 +22,9 @@ type config struct {
 	SizeLabels []struct {
 		Name string `yaml:"name"`
 	} `yaml:"size_labels"`
+	EngineeringFunctions []struct {
+		Name string `yaml:"name"`
+	} `yaml:"engineering_functions"`
 }
 
 func main() {
@@ -58,13 +61,13 @@ func main() {
 
 	// All columns from target project
 	columns, _, err := client.Projects.ListProjectColumns(ctx, projectID, nil)
-	fmt.Println("All Project Columns: ", columns)
+	// fmt.Println("All Project Columns: ", columns)
 
 	// Target column names
-	fmt.Println("column names from config: ", cfg.Columns)
+	// fmt.Println("column names from config: ", cfg.Columns)
 
 	targetColumns := filterTargetColumns(cfg, columns)
-	fmt.Println("targetColumns: ", targetColumns)
+	// fmt.Println("targetColumns: ", targetColumns)
 
 	// All cards from target columns
 	cardsForTargetColumns := make([]*github.ProjectCard, 0)
@@ -79,14 +82,37 @@ func main() {
 		}
 	}
 
-	// Getting labels
-	labels, _, err := client.Issues.GetLabel(ctx, cfg.Github.Owner, cfg.Github.Repo, cfg.SizeLabels[0].Name)
-	fmt.Println(labels)
+	// Fetching all size labels
+	sizeLabels := make([]*github.Label, 0, len(cfg.SizeLabels))
+	for i := 0; i < len(cfg.SizeLabels); i++ {
+		label, _, err := client.Issues.GetLabel(ctx, cfg.Github.Owner, cfg.Github.Repo, cfg.SizeLabels[i].Name)
+		if err != nil {
+			fmt.Println(err)
+		}
+		sizeLabels = append(sizeLabels, label)
+	}
 
+	// Fetching all engineering functions from config
+	engineeringFunctions := make([]string, 0, len(cfg.EngineeringFunctions))
+	for i := 0; i < len(cfg.EngineeringFunctions); i++ {
+		engFunction := cfg.EngineeringFunctions[i].Name
+		engineeringFunctions = append(engineeringFunctions, engFunction)
+	}
+
+	// Creating Label frequency map
+	labelFrequency := map[string]map[string]int{}
+	for i := 0; i < len(engineeringFunctions); i++ {
+		sizes := map[string]int{}
+		for j := 0; j < len(cfg.SizeLabels); j++ {
+			sizes[cfg.SizeLabels[j].Name] = 0
+		}
+		labelFrequency[engineeringFunctions[i]] = sizes
+	}
+	fmt.Println(labelFrequency)
 }
 
 func filterTargetColumns(conf config, columns []*github.ProjectColumn) []*github.ProjectColumn {
-	fmt.Println("Number of target columns from config: ", len(conf.Columns))
+	// fmt.Println("Number of target columns from config: ", len(conf.Columns))
 
 	result := make([]*github.ProjectColumn, 0, len(conf.Columns))
 
